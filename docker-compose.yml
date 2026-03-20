@@ -53,8 +53,6 @@ services:
     image: ghcr.io/intakeatlas/intakeatlas-app-web:latest 
     container_name: web-app
     restart: always
-    volumes:
-      - ./tmp/app-site:/usr/share/nginx/html:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.intakeatlas-app-http.rule=Host(`app.intakeatlas.com`)"
