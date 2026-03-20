@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: always
+    command:
+      - "--providers.docker=true"
+      - "--providers.file.directory=/etc/traefik"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.dashboard.address=127.0.0.1:8080" # Restrict dashboard to localhost
+      - "--api.dashboard=true"
+      - "--certificatesresolvers.le.acme.dnschallenge=true"
+      - "--certificatesresolvers.le.acme.dnschallenge.provider=transip"
+      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # TODO Add working dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik:/etc/traefik
+      - ./traefik/letsencrypt:/letsencrypt
+    environment:
+      - ACME_EMAIL=${ACME_EMAIL}
+      - TRANSIP_ACCOUNT_NAME=${TRANSIP_ACCOUNT_NAME}
+      - TRANSIP_PRIVATE_KEY_PATH=/etc/traefik/transip.key
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+  nginx_app:
+    image: nginx:alpine
+    container_name: nginx_app
+    restart: always
+    volumes:
+      - ./tmp/main-site:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.intakeatlas-main-http.rule=Host(`intakeatlas.com`)"
+      - "traefik.http.routers.intakeatlas-main-http.entrypoints=web"
+      - "traefik.http.routers.intakeatlas-main-http.middlewares=intakeatlas-main-redirect"
+      - "traefik.http.routers.intakeatlas-main.rule=Host(`intakeatlas.com`)"
+      - "traefik.http.routers.intakeatlas-main.entrypoints=websecure"
+      - "traefik.http.routers.intakeatlas-main.tls.certresolver=le"
+      - "traefik.http.services.intakeatlas-main.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.intakeatlas-main-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.intakeatlas-main-redirect.redirectscheme.permanent=true"
+
+  nginx_app_subdomain:
+    image: nginx:alpine
+    container_name: nginx_app_subdomain
+    restart: always
+    volumes:
+      - ./tmp/app-site:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.intakeatlas-app-http.rule=Host(`app.intakeatlas.com`)"
+      - "traefik.http.routers.intakeatlas-app-http.entrypoints=web"
+      - "traefik.http.routers.intakeatlas-app-http.middlewares=intakeatlas-app-redirect"
+      - "traefik.http.routers.intakeatlas-app.rule=Host(`app.intakeatlas.com`)"
+      - "traefik.http.routers.intakeatlas-app.entrypoints=websecure"
+      - "traefik.http.routers.intakeatlas-app.tls.certresolver=le"
+      - "traefik.http.services.intakeatlas-app.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.intakeatlas-app-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.intakeatlas-app-redirect.redirectscheme.permanent=true"
