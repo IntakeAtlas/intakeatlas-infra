@@ -1,4 +1,4 @@
-# wordpress-docker-compose
+# Infrastructure as code solution
 
 
 TODO:
