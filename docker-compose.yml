@@ -49,9 +49,9 @@ services:
       - "traefik.http.middlewares.intakeatlas-main-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.intakeatlas-main-redirect.redirectscheme.permanent=true"
 
-  nginx_app_subdomain:
-    image: nginx:alpine
-    container_name: nginx_app_subdomain
+  web-app:
+    image: ghcr.io/intakeatlas/intakeatlas-app-web:latest 
+    container_name: web-app
     restart: always
     volumes:
       - ./tmp/app-site:/usr/share/nginx/html:ro
