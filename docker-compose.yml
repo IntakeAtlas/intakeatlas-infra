@@ -33,12 +33,10 @@ services:
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.service=api@internal"
 
-  nginx_app:
-    image: nginx:alpine
-    container_name: nginx_app
+  website:
+    image: ghcr.io/intakeatlas/intakeatlas-website:latest
+    container_name: website
     restart: always
-    volumes:
-      - ./tmp/main-site:/usr/share/nginx/html:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.intakeatlas-main-http.rule=Host(`intakeatlas.com`)"
